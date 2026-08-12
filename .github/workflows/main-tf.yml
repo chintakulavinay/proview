@@ -1,0 +1,131 @@
+name: Main WF
+
+on:
+  push:
+  workflow_dispatch:
+
+env:
+  # DEV Variables
+  RUN_ON_DEV: 'YES'
+  JOB_RUN_DEV_PLAN: 'YES'
+  JOB_RUN_DEV_APPLY: 'YES'
+  JOB_RUN_DEV_DESTROY: 'NO'
+  AWS_ROLE_DEV: 'arn:aws:iam::865000063896:role/terraform_abs'
+
+  # QA Variables
+  RUN_ON_QA: 'NO'
+  JOB_RUN_QA_PLAN: 'NO'
+  JOB_RUN_QA_APPLY: 'NO'
+  JOB_RUN_QA_DESTROY: 'NO'
+  AWS_ROLE_QA: 'arn:aws:iam::865000063896:role/terraform_abs'
+
+  # PROD Variables
+  RUN_ON_PROD: 'NO'
+  JOB_RUN_PROD_PLAN: 'NO'
+  JOB_RUN_PROD_APPLY: 'NO'
+  JOB_RUN_PROD_DESTROY: 'NO'
+  AWS_ROLE_PROD: 'arn:aws:iam::865000063896:role/terraform_abs'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+
+  job-0-capturing-scope:
+    runs-on: ubuntu-latest
+
+    outputs:
+      RUN_ON_DEV: ${{ steps.dev.outputs.RUN_ON_DEV }}
+      JOB_RUN_DEV_PLAN: ${{ steps.dev.outputs.JOB_RUN_DEV_PLAN }}
+      JOB_RUN_DEV_APPLY: ${{ steps.dev.outputs.JOB_RUN_DEV_APPLY }}
+      JOB_RUN_DEV_DESTROY: ${{ steps.dev.outputs.JOB_RUN_DEV_DESTROY }}
+      AWS_ROLE_DEV: ${{ steps.dev.outputs.AWS_ROLE_DEV }}
+
+      RUN_ON_QA: ${{ steps.qa.outputs.RUN_ON_QA }}
+      JOB_RUN_QA_PLAN: ${{ steps.qa.outputs.JOB_RUN_QA_PLAN }}
+      JOB_RUN_QA_APPLY: ${{ steps.qa.outputs.JOB_RUN_QA_APPLY }}
+      JOB_RUN_QA_DESTROY: ${{ steps.qa.outputs.JOB_RUN_QA_DESTROY }}
+      AWS_ROLE_QA: ${{ steps.qa.outputs.AWS_ROLE_QA }}
+
+      RUN_ON_PROD: ${{ steps.prod.outputs.RUN_ON_PROD }}
+      JOB_RUN_PROD_PLAN: ${{ steps.prod.outputs.JOB_RUN_PROD_PLAN }}
+      JOB_RUN_PROD_APPLY: ${{ steps.prod.outputs.JOB_RUN_PROD_APPLY }}
+      JOB_RUN_PROD_DESTROY: ${{ steps.prod.outputs.JOB_RUN_PROD_DESTROY }}
+      AWS_ROLE_PROD: ${{ steps.prod.outputs.AWS_ROLE_PROD }}
+
+    steps:
+      - id: dev
+        run: |
+          echo "RUN_ON_DEV=${{ env.RUN_ON_DEV }}" >> $GITHUB_OUTPUT
+          echo "JOB_RUN_DEV_PLAN=${{ env.JOB_RUN_DEV_PLAN }}" >> $GITHUB_OUTPUT
+          echo "JOB_RUN_DEV_APPLY=${{ env.JOB_RUN_DEV_APPLY }}" >> $GITHUB_OUTPUT
+          echo "JOB_RUN_DEV_DESTROY=${{ env.JOB_RUN_DEV_DESTROY }}" >> $GITHUB_OUTPUT
+          echo "AWS_ROLE_DEV=${{ env.AWS_ROLE_DEV }}" >> $GITHUB_OUTPUT
+
+      - id: qa
+        run: |
+          echo "RUN_ON_QA=${{ env.RUN_ON_QA }}" >> $GITHUB_OUTPUT
+          echo "JOB_RUN_QA_PLAN=${{ env.JOB_RUN_QA_PLAN }}" >> $GITHUB_OUTPUT
+          echo "JOB_RUN_QA_APPLY=${{ env.JOB_RUN_QA_APPLY }}" >> $GITHUB_OUTPUT
+          echo "JOB_RUN_QA_DESTROY=${{ env.JOB_RUN_QA_DESTROY }}" >> $GITHUB_OUTPUT
+          echo "AWS_ROLE_QA=${{ env.AWS_ROLE_QA }}" >> $GITHUB_OUTPUT
+
+      - id: prod
+        run: |
+          echo "RUN_ON_PROD=${{ env.RUN_ON_PROD }}" >> $GITHUB_OUTPUT
+          echo "JOB_RUN_PROD_PLAN=${{ env.JOB_RUN_PROD_PLAN }}" >> $GITHUB_OUTPUT
+          echo "JOB_RUN_PROD_APPLY=${{ env.JOB_RUN_PROD_APPLY }}" >> $GITHUB_OUTPUT
+          echo "JOB_RUN_PROD_DESTROY=${{ env.JOB_RUN_PROD_DESTROY }}" >> $GITHUB_OUTPUT
+          echo "AWS_ROLE_PROD=${{ env.AWS_ROLE_PROD }}" >> $GITHUB_OUTPUT
+
+  DEV-call-pv-tf-wf:
+    needs: job-0-capturing-scope
+
+    if: ${{ needs.job-0-capturing-scope.outputs.RUN_ON_DEV == 'YES' }}
+
+    uses: ./.github/workflows/_pv-terraform-workflow-tf150-v1.yml
+
+    secrets: inherit
+
+    with:
+      ON_ENV: "dev"
+      AWS_REGION: "us-east-1"
+      JOB_RUN_PLAN: ${{ needs.job-0-capturing-scope.outputs.JOB_RUN_DEV_PLAN }}
+      JOB_RUN_APPLY: ${{ needs.job-0-capturing-scope.outputs.JOB_RUN_DEV_APPLY }}
+      JOB_RUN_DESTROY: ${{ needs.job-0-capturing-scope.outputs.JOB_RUN_DEV_DESTROY }}
+      AWS_ROLE: ${{ needs.job-0-capturing-scope.outputs.AWS_ROLE_DEV }}
+
+  QA-call-pv-tf-wf:
+    needs: job-0-capturing-scope
+
+    if: ${{ needs.job-0-capturing-scope.outputs.RUN_ON_QA == 'YES' }}
+
+    uses: ./.github/workflows/_pv-terraform-workflow-tf150-v1.yml
+
+    secrets: inherit
+
+    with:
+      ON_ENV: "qa"
+      AWS_REGION: "us-east-1"
+      JOB_RUN_PLAN: ${{ needs.job-0-capturing-scope.outputs.JOB_RUN_QA_PLAN }}
+      JOB_RUN_APPLY: ${{ needs.job-0-capturing-scope.outputs.JOB_RUN_QA_APPLY }}
+      JOB_RUN_DESTROY: ${{ needs.job-0-capturing-scope.outputs.JOB_RUN_QA_DESTROY }}
+      AWS_ROLE: ${{ needs.job-0-capturing-scope.outputs.AWS_ROLE_QA }}
+
+  PROD-call-pv-tf-wf:
+    needs: job-0-capturing-scope
+
+    if: ${{ needs.job-0-capturing-scope.outputs.RUN_ON_PROD == 'YES' }}
+
+    uses: ./.github/workflows/_pv-terraform-workflow-tf150-v1.yml
+
+    secrets: inherit
+
+    with:
+      ON_ENV: "prod"
+      AWS_REGION: "us-east-1"
+      JOB_RUN_PLAN: ${{ needs.job-0-capturing-scope.outputs.JOB_RUN_PROD_PLAN }}
+      JOB_RUN_APPLY: ${{ needs.job-0-capturing-scope.outputs.JOB_RUN_PROD_APPLY }}
+      JOB_RUN_DESTROY: ${{ needs.job-0-capturing-scope.outputs.JOB_RUN_PROD_DESTROY }}
+      AWS_ROLE: ${{ needs.job-0-capturing-scope.outputs.AWS_ROLE_PROD }}

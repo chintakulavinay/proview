@@ -1,0 +1,128 @@
+name: Terraform Reusable Workflow
+
+on:
+  workflow_call:
+
+    inputs:
+
+      ON_ENV:
+        required: true
+        type: string
+
+      AWS_REGION:
+        required: true
+        type: string
+
+      JOB_RUN_PLAN:
+        required: true
+        type: string
+
+      JOB_RUN_APPLY:
+        required: true
+        type: string
+
+      JOB_RUN_DESTROY:
+        required: true
+        type: string
+
+      AWS_ROLE:
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+
+  terraform-plan:
+
+    if: ${{ inputs.JOB_RUN_PLAN == 'YES' }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+          -reconfigure \
+          -backend-config=environments/${{ inputs.ON_ENV }}/backend.tf
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: |
+          terraform plan \
+          -var-file=environments/${{ inputs.ON_ENV }}/terraform.tfvars \
+          -out=tfplan
+
+  terraform-apply:
+
+    needs: terraform-plan
+
+    if: ${{ inputs.JOB_RUN_APPLY == 'YES' }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+          -reconfigure \
+          -backend-config=environments/${{ inputs.ON_ENV }}/backend.tf
+
+      - name: Terraform Apply
+        run: |
+          terraform apply \
+          -auto-approve \
+          -var-file=environments/${{ inputs.ON_ENV }}/terraform.tfvars
+
+  terraform-destroy:
+
+    if: ${{ inputs.JOB_RUN_DESTROY == 'YES' }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+          -reconfigure \
+          -backend-config=environments/${{ inputs.ON_ENV }}/backend.tf
+
+      - name: Terraform Destroy
+        run: |
+          terraform destroy \
+          -auto-approve \
+          -var-file=environments/${{ inputs.ON_ENV }}/terraform.tfvars
