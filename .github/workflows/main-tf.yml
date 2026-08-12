@@ -14,9 +14,9 @@ env:
 
   # QA Variables
   RUN_ON_QA: 'YES'
-  JOB_RUN_QA_PLAN: 'YES'
-  JOB_RUN_QA_APPLY: 'YES'
-  JOB_RUN_QA_DESTROY: 'NO'
+  JOB_RUN_QA_PLAN: 'NO'
+  JOB_RUN_QA_APPLY: 'NO'
+  JOB_RUN_QA_DESTROY: 'YES'
   AWS_ROLE_QA: 'arn:aws:iam::865000063896:role/terraform_abs'
 
   # PROD Variables
