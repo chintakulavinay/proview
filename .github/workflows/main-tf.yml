@@ -6,10 +6,10 @@ on:
 
 env:
   # DEV Variables
-  RUN_ON_DEV: 'YES'
-  JOB_RUN_DEV_PLAN: 'YES'
-  JOB_RUN_DEV_APPLY: 'YES'
-  JOB_RUN_DEV_DESTROY: 'NO'
+  RUN_ON_DEV: 'NO'
+  JOB_RUN_DEV_PLAN: 'NO'
+  JOB_RUN_DEV_APPLY: 'NO'
+  JOB_RUN_DEV_DESTROY: 'YES'
   AWS_ROLE_DEV: 'arn:aws:iam::865000063896:role/terraform_abs'
 
   # QA Variables
