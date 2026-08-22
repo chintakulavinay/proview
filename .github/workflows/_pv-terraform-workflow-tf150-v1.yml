@@ -68,6 +68,7 @@ jobs:
           -out=tfplan
 
   terraform-apply:
+    environment: ${{ inputs.ON_ENV }}
 
     needs: terraform-plan
 
